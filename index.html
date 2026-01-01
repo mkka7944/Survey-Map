@@ -11,7 +11,7 @@
     <style>
         :root { 
             --primary: #2563eb; --warning: #f59e0b; --danger: #ef4444; --text: #1e293b; --bg: #f8fafc; 
-            --sidebar-w: 360px; --sidebar-collapsed-w: 0px;
+            --sidebar-w: 320px; --sidebar-collapsed-w: 0px;
             --spacer: 16px; --spacer-lg: 24px;
             --font-xs: 11px; --font-sm: 13px; --font-base: 14px; --font-md: 16px; --font-lg: 18px;
         }
@@ -20,7 +20,8 @@
         
         /* Layout */
         #sidebar { 
-            width: var(--sidebar-w); background: white; border-right: 1px solid #e2e8f0; 
+            width: var(--sidebar-w); background: rgba(255, 255, 255, 0.9); 
+            backdrop-filter: blur(20px); border-right: 1px solid rgba(226, 232, 240, 0.8); 
             display: flex; flex-direction: column; z-index: 2000; box-shadow: 0 0 40px rgba(0,0,0,0.03);
             transition: width 0.4s cubic-bezier(0.4, 0, 0.2, 1);
             position: relative;
@@ -45,7 +46,9 @@
         #main-stage { flex: 1; position: relative; display: flex; flex-direction: column; overflow: hidden; }
         .hide-map-ui #sidebar-toggle, .hide-map-ui .map-controls, .hide-map-ui #info-card { display: none !important; }
         #map-container { flex: 1; position: relative; }
-        #map { width: 100%; height: 100%; }
+        #map { width: 100%; height: 100%; background: #ddd; }
+        .leaflet-container img.leaflet-tile { outline: 1px solid transparent; }
+        .leaflet-container * { box-sizing: content-box; }
 
         /* Fullscreen List View */
         #list-view-stage { 
@@ -81,8 +84,8 @@
         .gallery-thumb:hover { border-color: var(--primary); transform: translateY(-2px); }
 
         /* Sidebar UI refinements */
-        .filters { padding: 20px; display: flex; flex-direction: column; gap: 16px; }
-        .filter-group { display: flex; flex-direction: column; gap: 8px; transition: all 0.3s; }
+        .filters { padding: 12px var(--spacer) 40px var(--spacer); display: flex; flex-direction: column; gap: 8px; }
+        .filter-group { display: flex; flex-direction: column; gap: 4px; transition: all 0.3s; margin-bottom: 4px; }
         .filter-group.collapsed { gap: 0; }
         .filter-group.collapsed .multi-select-container { display: none; }
         .filter-group.collapsed .filter-content { display: none; }
@@ -90,24 +93,74 @@
         
         .selection-badge {
             background: #eff6ff; color: #2563eb; font-size: 10px; font-weight: 800;
-            padding: 2px 8px; border-radius: 20px; border: 1px solid #dbeafe;
-            margin-left: 8px; display: inline-flex; align-items: center;
-            text-transform: none; line-height: 1; height: 18px;
+            padding: 2px 8px; border-radius: 20px; border: 1.5px solid #dbeafe;
+            display: inline-flex; align-items: center; justify-content: center;
+            text-transform: none; line-height: 1; height: 18px; min-width: 22px;
+            box-shadow: 0 2px 8px rgba(37, 99, 235, 0.1);
+            margin-left: auto; flex-shrink: 0;
         }
         
         .filter-label { 
-            font-size: var(--font-xs); font-weight: 700; color: #64748b; 
-            text-transform: uppercase; letter-spacing: 0.5px;
-            display: flex; align-items: center;
+            font-size: 11px; font-weight: 800; color: #1e293b; 
+            text-transform: uppercase; letter-spacing: 0.6px;
+            display: flex; align-items: center; gap: 6px; flex: 1;
+            white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
         }
         
         .toggle-group-btn {
-            width: 20px; height: 20px; border-radius: 50%; border: 1px solid #e2e8f0;
-            background: #f8fafc; color: #64748b; display: flex; align-items: center; justify-content: center;
-            cursor: pointer; transition: all 0.2s; font-size: 14px;
+            width: 24px; height: 24px; border-radius: 50%; border: 1.5px solid #e2e8f0;
+            background: white; color: #64748b; display: flex; align-items: center; justify-content: center;
+            cursor: pointer; transition: all 0.2s; font-size: 16px;
         }
-        .toggle-group-btn:hover { background: #f1f5f9; color: var(--primary); }
+        .toggle-group-btn:hover { background: #eff6ff; color: var(--primary); border-color: #bfdbfe; }
         .filter-group.collapsed .toggle-group-btn i { transform: rotate(-90deg); }
+        .panel-header-premium {
+            background: white; border: 1.5px solid #e2e8f0; border-radius: 12px;
+            padding: 8px 12px; cursor: pointer; transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            display: flex; align-items: center; gap: 8px; min-height: 40px;
+        }
+        .panel-header-premium:hover { background: #f8fafc; border-color: var(--primary); transform: translateX(4px); box-shadow: 0 4px 12px rgba(37, 99, 235, 0.08); }
+        .filter-group.active-group .panel-header-premium { border-color: var(--primary); background: #eff6ff; }
+        
+        .panel-header-premium.action-btn-premium { border-color: transparent; }
+        
+        /* Sidebar Footer Styles */
+        .sidebar-footer {
+            margin-top: auto; padding: 12px 16px; 
+            background: white; border-top: 1px solid #e2e8f0;
+            display: flex; gap: 6px; z-index: 2100;
+        }
+        .footer-btn {
+            flex: 1; height: 40px; border-radius: 10px; border: 1.5px solid #e2e8f0;
+            display: flex; align-items: center; justify-content: center; gap: 6px;
+            font-size: 11px; font-weight: 800; text-transform: uppercase; cursor: pointer;
+            transition: all 0.2s;
+        }
+        .footer-btn.apply { background: var(--primary); color: white; border-color: var(--primary); }
+        .footer-btn.today { background: #0ea5e9; color: white; border-color: #0ea5e9; }
+        .footer-btn.reset { background: #ef4444; color: white; border-color: #ef4444; }
+        .footer-btn:hover { opacity: 0.9; transform: translateY(-2px); box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
+
+        /* Nested Accordion Content */
+        .nested-content { display: none; padding: 6px 12px 10px 12px; }
+        .filter-group:not(.collapsed) .nested-content { display: block; }
+        .sub-tool-item {
+            display: flex; align-items: center; gap: 10px; padding: 8px 12px;
+            border-radius: 8px; font-size: 12px; font-weight: 700; color: #475569;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); cursor: pointer;
+        }
+        .sub-tool-item:hover { background: #eff6ff; color: var(--primary); transform: translateX(4px); }
+        .sub-tool-item .material-icons-round { font-size: 20px; }
+        
+        .stat-badge {
+            margin: 4px var(--spacer); padding: 10px 14px; border-radius: 12px; 
+            background: #f1f5f9; display: flex; justify-content: space-between; 
+            align-items: center; border: 1.5px solid #e2e8f0;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); cursor: default;
+        }
+        .stat-badge:hover { transform: translateX(4px); background: #eff6ff; border-color: var(--primary); }
+        
+        
         
         /* Modernized Multi-Select List */
         .multi-select-container { 
@@ -136,15 +189,16 @@
         
         .filter-header { 
             display: flex; justify-content: space-between; align-items: center; padding: 4px 0;
-            min-height: 28px;
+            min-height: 28px; width: 100%;
         }
-        .filter-actions { display: flex; gap: 8px; }
+        .filter-actions { display: flex; gap: 4px; border-left: 1px solid #e2e8f0; padding-left: 8px; margin-left: auto; }
         .select-all-btn { 
-            font-size: 10px; font-weight: 800; color: var(--primary); cursor: pointer; 
-            text-transform: uppercase; background: #f1f5f9; border: 1px solid #e2e8f0; 
-            padding: 2px 8px; border-radius: 6px; transition: all 0.2s;
+            background: #f8fafc; border: 1.5px solid #e2e8f0; color: #64748b;
+            font-size: 10px; font-weight: 800; padding: 2px 8px; border-radius: 6px;
+            cursor: pointer; transition: all 0.2s; text-transform: uppercase;
         }
-        .select-all-btn:hover { background: #e2e8f0; color: #1e40af; }
+        .select-all-btn:hover { background: #eff6ff; color: var(--primary); border-color: #bfdbfe; }
+        .select-all-btn.unselect:hover { background: #fef2f2; color: #ef4444; border-color: #fee2e2; }
         .select-all-btn.unselect { color: #64748b; background: #f8fafc; }
 
         .apply-btn { 
@@ -373,10 +427,10 @@
 
         @media (max-width: 768px) {
             #sidebar { 
-                position: fixed; left: -100%; top: 0; bottom: 0; width: 300px; 
+                position: fixed; left: -100%; top: 0; bottom: 0; width: var(--sidebar-w); 
                 z-index: 2000; transform: none;
             }
-            #sidebar.collapsed { width: 300px; transform: none; left: -100%; }
+            #sidebar.collapsed { width: var(--sidebar-w); transform: none; left: -100%; }
             #sidebar.open { left: 0; box-shadow: 0 0 100px rgba(0,0,0,0.5); }
             #sidebar-toggle { display: none; }
             .mobile-only { display: block; }
@@ -797,7 +851,7 @@
         <div>
             <div style="font-weight: 700; font-size: 16px;">Field Staff Pro</div>
             <div style="font-size: 10px; color: #64748b; font-weight: 600; margin-top:2px;">
-                Updated: 31-Dec 06:40 PM 
+                Updated: 01-Jan 06:00 PM 
                 <span style="color:var(--primary); margin-left:4px;">[Rev. 1228.2220]</span>
             </div>
         </div>
@@ -810,70 +864,63 @@
         <button class="mobile-only" onclick="Sidebar.toggle()" style="background:none; border:none; display:none; position:absolute; top:16px; right:16px;"><span class="material-icons-round">close</span></button>
     </div>
     
-    <div id="sidebar-scroll" style="flex:1; overflow-y:auto; overflow-x: hidden;">
-        <div class="filters" style="padding: 8px var(--spacer) 4px var(--spacer);">
-            <div class="filter-group">
-                <div class="filter-header">
-                    <div style="display:flex; align-items:center; gap:6px;">
-                        <button class="toggle-group-btn" onclick="App.toggleFilterGroup(this)">
-                            <i class="material-icons-round" style="font-size:16px;">expand_less</i>
-                        </button>
-                        <span class="material-icons-round" style="color:var(--primary); font-size:16px;">public</span>
-                        <span class="filter-label" id="lbl-dist">Districts</span>
+    <div id="sidebar-scroll" style="flex:1; overflow-y:auto; overflow-x: hidden; padding-bottom: 20px;">
+        <div class="filters" style="padding: 8px var(--spacer) 80px var(--spacer);">
+            <div class="filter-group collapsed">
+                <div class="panel-header-premium" onclick="App.toggleFilterGroup(this)">
+                    <span class="material-icons-round" style="color:var(--primary); font-size:20px;">public</span>
+                    <span class="filter-label" id="lbl-dist" style="flex:1">Districts</span>
+                    <div class="filter-actions" style="border:none; padding:0; margin-right:8px;">
+                        <button class="select-all-btn" onclick="event.stopPropagation(); App.toggleAll('f-dist', true)">All</button>
+                        <button class="select-all-btn unselect" onclick="event.stopPropagation(); App.toggleAll('f-dist', false)">None</button>
                     </div>
-                    <div class="filter-actions">
-                        <button class="select-all-btn" onclick="App.toggleAll('f-dist', true)">All</button>
-                        <button class="select-all-btn unselect" onclick="App.toggleAll('f-dist', false)">None</button>
-                    </div>
+                    <div class="selection-badge" id="badge-f-dist" style="display:none">0</div>
+                    <button class="toggle-group-btn" style="border:none; background:none; padding:0; margin-left:8px;">
+                        <i class="material-icons-round">expand_less</i>
+                    </button>
                 </div>
                 <div id="f-dist" class="multi-select-container"></div>
             </div>
             <div class="filter-group collapsed">
-                <div class="filter-header">
-                    <div style="display:flex; align-items:center; gap:6px;">
-                        <button class="toggle-group-btn" onclick="App.toggleFilterGroup(this)">
-                            <i class="material-icons-round" style="font-size:16px;">expand_more</i>
-                        </button>
-                        <span class="material-icons-round" style="color:var(--primary); font-size:16px;">location_city</span>
-                        <span class="filter-label" id="lbl-tehsil">Tehsils</span>
+                <div class="panel-header-premium" onclick="App.toggleFilterGroup(this)">
+                    <span class="material-icons-round" style="color:var(--primary); font-size:20px;">location_city</span>
+                    <span class="filter-label" id="lbl-tehsil" style="flex:1">Tehsils</span>
+                    <div class="filter-actions" style="border:none; padding:0; margin-right:8px;">
+                        <button class="select-all-btn" onclick="event.stopPropagation(); App.toggleAll('f-tehsil', true)">All</button>
+                        <button class="select-all-btn unselect" onclick="event.stopPropagation(); App.toggleAll('f-tehsil', false)">None</button>
                     </div>
-                    <div class="filter-actions">
-                        <button class="select-all-btn" onclick="App.toggleAll('f-tehsil', true)">All</button>
-                        <button class="select-all-btn unselect" onclick="App.toggleAll('f-tehsil', false)">None</button>
-                    </div>
+                    <div class="selection-badge" id="badge-f-tehsil" style="display:none">0</div>
+                    <button class="toggle-group-btn" style="border:none; background:none; padding:0; margin-left:8px;">
+                        <i class="material-icons-round">expand_more</i>
+                    </button>
                 </div>
                 <div id="f-tehsil" class="multi-select-container"></div>
             </div>
             <div class="filter-group collapsed">
-                <div class="filter-header">
-                    <div style="display:flex; align-items:center; gap:6px;">
-                        <button class="toggle-group-btn" onclick="App.toggleFilterGroup(this)">
-                            <i class="material-icons-round" style="font-size:16px;">expand_more</i>
-                        </button>
-                        <span class="material-icons-round" style="color:var(--primary); font-size:16px;">map</span>
-                        <span class="filter-label" id="lbl-mc">MC/UC Areas</span>
+                <div class="panel-header-premium" onclick="App.toggleFilterGroup(this)">
+                    <span class="material-icons-round" style="color:var(--primary); font-size:20px;">map</span>
+                    <span class="filter-label" id="lbl-mc" style="flex:1">MC/UC Areas</span>
+                    <div class="filter-actions" style="border:none; padding:0; margin-right:8px;">
+                        <button class="select-all-btn" onclick="event.stopPropagation(); App.toggleAll('f-mc', true)">All</button>
+                        <button class="select-all-btn unselect" onclick="event.stopPropagation(); App.toggleAll('f-mc', false)">None</button>
                     </div>
-                    <div class="filter-actions">
-                        <button class="select-all-btn" onclick="App.toggleAll('f-mc', true)">All</button>
-                        <button class="select-all-btn unselect" onclick="App.toggleAll('f-mc', false)">None</button>
-                    </div>
+                    <div class="selection-badge" id="badge-f-mc" style="display:none">0</div>
+                    <button class="toggle-group-btn" style="border:none; background:none; padding:0; margin-left:8px;">
+                        <i class="material-icons-round">expand_more</i>
+                    </button>
                 </div>
                 <div id="f-mc" class="multi-select-container"></div>
             </div>
             <div class="filter-group collapsed">
-                <div class="filter-header" style="margin-bottom: 8px;">
-                     <div style="display:flex; align-items:center; gap:6px;">
-                        <button class="toggle-group-btn" onclick="App.toggleFilterGroup(this)">
-                            <i class="material-icons-round" style="font-size:16px;">expand_more</i>
-                        </button>
-                        <span class="material-icons-round" style="color:var(--primary); font-size:16px;">calendar_month</span>
-                        <span class="filter-label">Date Range</span>
-                    </div>
-                    <div class="filter-actions">
-                        <button type="button" class="select-all-btn unselect" onclick="App.clearDates()">Clear</button>
-                    </div>
+                <div class="panel-header-premium" onclick="App.toggleFilterGroup(this)">
+                    <span class="material-icons-round" style="color:var(--primary); font-size:20px;">calendar_month</span>
+                    <span class="filter-label" style="flex:1">Date Range</span>
+                    <button class="select-all-btn unselect" onclick="event.stopPropagation(); App.clearDates()" style="margin-left:auto; margin-right:8px;">Clear</button>
+                    <button class="toggle-group-btn" style="border:none; background:none; padding:0;">
+                        <i class="material-icons-round">expand_more</i>
+                    </button>
                 </div>
-                <div class="filter-content" style="display:flex; gap:12px;">
+                <div class="filter-content" style="padding: 12px 16px; display:flex; gap:12px;">
                     <div style="flex:1">
                         <input type="text" id="f-start" class="filter-select" placeholder="Start Date" style="padding:10px; border-radius:8px; border:1px solid #e2e8f0; font-size:13px; font-weight:500; width:100%;">
                     </div>
@@ -885,20 +932,19 @@
 
             <!-- Payment Filter -->
             <div class="filter-group collapsed">
-                <div class="filter-header">
-                    <div style="display:flex; align-items:center; gap:6px;">
-                        <button class="toggle-group-btn" onclick="App.toggleFilterGroup(this)">
-                            <i class="material-icons-round" style="font-size:16px;">expand_more</i>
-                        </button>
-                        <span class="material-icons-round" style="color:var(--primary); font-size:16px;">payments</span>
-                        <span class="filter-label" id="lbl-pay">Payment Status</span>
+                <div class="panel-header-premium" onclick="App.toggleFilterGroup(this)">
+                    <span class="material-icons-round" style="color:var(--primary); font-size:20px;">payments</span>
+                    <span class="filter-label" id="lbl-pay" style="flex:1">Payment</span>
+                    <div class="filter-actions" style="border:none; padding:0; margin-right:8px;">
+                        <button class="select-all-btn" onclick="event.stopPropagation(); App.toggleAll('f-pay', true)">All</button>
+                        <button class="select-all-btn unselect" onclick="event.stopPropagation(); App.toggleAll('f-pay', false)">None</button>
                     </div>
-                    <div class="filter-actions">
-                        <button class="select-all-btn" onclick="App.toggleAll('f-pay', true)">All</button>
-                        <button class="select-all-btn unselect" onclick="App.toggleAll('f-pay', false)">None</button>
-                    </div>
+                    <div class="selection-badge" id="badge-f-pay" style="display:none">0</div>
+                    <button class="toggle-group-btn" style="border:none; background:none; padding:0; margin-left:8px;">
+                        <i class="material-icons-round">expand_more</i>
+                    </button>
                 </div>
-                <div id="f-pay" class="multi-select-container">
+                <div id="f-pay" class="multi-select-container" style="padding: 12px 16px;">
                     <div class="multi-option" data-value="paid" onclick="App.handleMultiClick(event, 'f-pay', 'apply')">
                         <input type="checkbox" onchange="App.handleMultiChange(event, 'f-pay', 'apply')">
                         <span class="pill paid">Paid</span>
@@ -916,19 +962,16 @@
 
             <!-- Cloud Sync Filter -->
             <div class="filter-group collapsed">
-                <div class="filter-header">
-                    <div style="display:flex; align-items:center; gap:6px;">
-                        <button class="toggle-group-btn" onclick="App.toggleFilterGroup(this)">
-                            <i class="material-icons-round" style="font-size:16px;">expand_more</i>
-                        </button>
-                        <span class="material-icons-round" style="color:#10b981; font-size:16px;">cloud_sync</span>
-                        <span class="filter-label" id="lbl-drive">Drive Sync</span>
-                    </div>
-                    <div class="filter-actions">
-                        <button class="select-all-btn unselect" onclick="document.getElementById('f-drive-only').checked=false; App.handleMultiChange({target:document.getElementById('f-drive-only')}, 'f-drive', 'apply')">Clear</button>
-                    </div>
+                <div class="panel-header-premium" onclick="App.toggleFilterGroup(this)">
+                    <span class="material-icons-round" style="color:#10b981; font-size:20px;">cloud_sync</span>
+                    <span class="filter-label" id="lbl-drive" style="flex:1">Drive Sync</span>
+                    <button class="select-all-btn unselect" onclick="event.stopPropagation(); document.getElementById('f-drive-only').checked=false; App.handleMultiChange({target:document.getElementById('f-drive-only')}, 'f-drive', 'apply')" style="margin-left:auto; margin-right:8px;">Clear</button>
+                    <div class="selection-badge" id="badge-f-drive" style="display:none; margin-left:0; margin-right:8px;">0</div>
+                    <button class="toggle-group-btn" style="border:none; background:none; padding:0;">
+                        <i class="material-icons-round">expand_more</i>
+                    </button>
                 </div>
-                <div id="f-drive" class="multi-select-container">
+                <div id="f-drive" class="multi-select-container" style="padding: 12px 16px;">
                     <div class="multi-option" onclick="App.handleMultiClick(event, 'f-drive', 'apply')">
                         <input type="checkbox" id="f-drive-only" onchange="App.handleMultiChange(event, 'f-drive', 'apply')">
                         <span style="font-weight:600; color:#059669;">Show drive images only</span>
@@ -938,20 +981,19 @@
 
             <!-- Quick Categories -->
             <div class="filter-group collapsed">
-                <div class="filter-header">
-                    <div style="display:flex; align-items:center; gap:6px;">
-                        <button class="toggle-group-btn" onclick="App.toggleFilterGroup(this)">
-                            <i class="material-icons-round" style="font-size:16px;">expand_more</i>
-                        </button>
-                        <span class="material-icons-round" style="color:#8b5cf6; font-size:16px;">category</span>
-                        <span class="filter-label" id="lbl-quick">Quick Categories</span>
+                <div class="panel-header-premium" onclick="App.toggleFilterGroup(this)">
+                    <span class="material-icons-round" style="color:#8b5cf6; font-size:20px;">category</span>
+                    <span class="filter-label" id="lbl-quick" style="flex:1">Categories</span>
+                    <div class="filter-actions" style="border:none; padding:0; margin-right:8px;">
+                        <button class="select-all-btn" onclick="event.stopPropagation(); App.toggleAll('f-quick', true)">All</button>
+                        <button class="select-all-btn unselect" onclick="event.stopPropagation(); App.toggleAll('f-quick', false)">None</button>
                     </div>
-                    <div class="filter-actions">
-                        <button class="select-all-btn" onclick="App.toggleAll('f-quick', true)">All</button>
-                        <button class="select-all-btn unselect" onclick="App.toggleAll('f-quick', false)">None</button>
-                    </div>
+                    <div class="selection-badge" id="badge-f-quick" style="display:none">0</div>
+                    <button class="toggle-group-btn" style="border:none; background:none; padding:0; margin-left:8px;">
+                        <i class="material-icons-round">expand_more</i>
+                    </button>
                 </div>
-                <div id="f-quick" class="filter-content multi-select-container">
+                <div id="f-quick" class="filter-content multi-select-container" style="padding: 12px 16px;">
                     <div class="multi-option selected" data-value="urban" onclick="App.toggleQuickFilter('urban', event)">
                         <input type="checkbox" checked id="q-urban"> <span>Urban</span>
                     </div>
@@ -966,54 +1008,86 @@
                     </div>
                 </div>
             </div>
+
+            <!-- Tools: Bills -->
+            <div class="filter-group collapsed">
+                <div class="panel-header-premium" onclick="App.toggleFilterGroup(this)">
+                    <span class="material-icons-round" style="color:#22c55e; font-size:20px;">payments</span>
+                    <span class="filter-label">Bills</span>
+                    <span class="selection-badge" id="badge-paid-count" style="display:none">0</span>
+                    <button class="toggle-group-btn" style="border:none; background:none; padding:0; margin-left:8px;">
+                        <i class="material-icons-round">expand_more</i>
+                    </button>
+                </div>
+                <div class="filter-content" style="padding: 4px 12px 12px 12px; display:flex; flex-direction:column; gap:4px;">
+                    <div class="nested-content" style="display:flex; flex-direction:column; gap:6px;">
+                        <div class="sub-tool-item" onclick="PaidBills.open()">
+                            <span class="material-icons-round">dashboard</span>
+                            <span>Dashboard</span>
+                        </div>
+                        <div class="sub-tool-item" onclick="BillVerifier.open()">
+                            <span class="material-icons-round">verified_user</span>
+                            <span>Verify Bill</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Tools: List View -->
+            <div class="filter-group collapsed">
+                <div class="panel-header-premium" onclick="ViewSwitcher.toList()">
+                    <span class="material-icons-round" style="color:#06b6d4; font-size:20px;">view_list</span>
+                    <span class="filter-label">List View</span>
+                    <span class="material-icons-round" style="font-size:18px; color:#94a3b8; margin-left:auto;">chevron_right</span>
+                </div>
+            </div>
+
+            <!-- Tools: Staff Report -->
+            <div class="filter-group collapsed">
+                <div class="panel-header-premium" onclick="App.toggleFilterGroup(this)">
+                    <span class="material-icons-round" style="color:var(--primary); font-size:20px;">assignment_ind</span>
+                    <span class="filter-label">Staff Report Section</span>
+                    <button class="toggle-group-btn" style="border:none; background:none; padding:0; margin-left:8px;">
+                        <i class="material-icons-round">expand_more</i>
+                    </button>
+                </div>
+                <div class="filter-content" style="padding: 4px 12px 12px 12px;">
+                    <div class="nested-content" style="display:grid; grid-template-columns: 1fr 1fr; gap:8px;">
+                        <div class="sub-tool-item" onclick="Stats.open()" style="background:#f8fafc; border:1px solid #e2e8f0; justify-content:center; flex-direction:column; gap:4px; padding:12px;">
+                            <span class="material-icons-round" style="color:#f59e0b;">leaderboard</span>
+                            <span style="font-size:10px;">Leaderboard</span>
+                        </div>
+                        <div class="sub-tool-item" onclick="PerformanceLog.open()" style="background:#f8fafc; border:1px solid #e2e8f0; justify-content:center; flex-direction:column; gap:4px; padding:12px;">
+                            <span class="material-icons-round" style="color:#8b5cf6;">assignment_turned_in</span>
+                            <span style="font-size:10px;">Performance</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
             </div>
         </div>
-
-    <!-- Operations Hub (Consolidated Navigation) -->
-    <div style="flex-shrink: 0; background: white; z-index: 100; border-top: 1px solid #e2e8f0; padding: 12px 16px; box-shadow: 0 -4px 15px rgba(0,0,0,0.03);">
-        <!-- Core Actions -->
-        <div style="display:flex; gap:8px; margin-bottom: 12px;">
-            <button class="apply-btn" onclick="App.apply()" style="flex:1">
-                <span class="material-icons-round">done</span> Apply
-            </button>
-            <button class="apply-btn" onclick="App.setToday()" style="flex:1; background:#0ea5e9; border-color:#0ea5e9;">
-                <span class="material-icons-round">today</span> Today
-            </button>
-            <button class="apply-btn" onclick="App.resetFilters()" style="flex:1; background:#ef4444; border-color:#ef4444;">
-                <span class="material-icons-round">refresh</span> Reset
-            </button>
+    
+    <!-- Live Totals badge (Repositioned above footer) -->
+    <div class="stat-badge">
+        <small id="stat-label" style="font-weight:700; color:#64748b; text-transform:uppercase; font-size:9px;">Live Survey Data</small>
+        <span id="stat-count" style="font-weight:800; color:var(--primary); font-size:14px;">0</span>
+    </div>
+    
+    <!-- Fixed Sidebar Footer -->
+    <div class="sidebar-footer">
+        <div class="footer-btn apply" onclick="App.apply()">
+            <span class="material-icons-round">done</span> Apply
         </div>
-
-        <!-- System Stations -->
-        <div style="display:grid; grid-template-columns: 1fr 1fr; gap:8px; margin-bottom: 12px;">
-            <button class="secondary-btn" onclick="PaidBills.open()" style="margin:0; border-color:#22c55e; color:#22c55e; justify-content:center; font-size:11px; padding:8px 4px;">
-                <span class="material-icons-round" style="font-size:18px;">payments</span> Paid Bills
-            </button>
-            <button class="secondary-btn" onclick="BillVerifier.open()" style="margin:0; border-color:var(--primary); color:var(--primary); justify-content:center; font-size:11px; padding:8px 4px;">
-                <span class="material-icons-round" style="font-size:18px;">verified_user</span> Verify Bill
-            </button>
+        <div class="footer-btn today" onclick="App.setToday()">
+            <span class="material-icons-round">today</span> Today
         </div>
-        
-        <!-- Management Tools -->
-        <button onclick="Stats.open()" class="secondary-btn" style="width:100%; justify-content:center; margin-bottom: 8px;">
-             <span class="material-icons-round" style="color:var(--primary)">leaderboard</span> Workflow Leaderboard
-        </button>
-        
-        <div style="display:flex; gap:8px; margin-bottom: 12px;">
-            <button onclick="PerformanceLog.open()" class="secondary-btn" style="margin:0; flex:1; justify-content:center;">
-                 <span class="material-icons-round" style="color:#8b5cf6">assignment_turned_in</span> Performance
-            </button>
-            <button onclick="ViewSwitcher.toList()" class="secondary-btn" style="margin:0; flex:1; justify-content:center;">
-                 <span class="material-icons-round" style="color:#06b6d4">view_list</span> List View
-            </button>
-        </div>
-
-        <!-- Live Totals badge -->
-        <div class="stat-badge" style="margin:0; padding: 8px 12px;">
-            <small id="stat-label">Total Survey</small>
-            <span id="stat-count">0</span>
+        <div class="footer-btn reset" onclick="App.resetFilters()">
+            <span class="material-icons-round">refresh</span> Reset
         </div>
     </div>
+
+
 </div>
 
 <div id="main-stage">
@@ -1464,20 +1538,19 @@
         },
 
         updateSidebarStatus() {
-            // Update selection counts in filter headers
+            // Update selection counts (balloons) in filter headers
             const updates = [
-                { id: 'f-dist', lbl: 'lbl-dist', text: 'Districts' },
-                { id: 'f-tehsil', lbl: 'lbl-tehsil', text: 'Tehsils' },
-                { id: 'f-mc', lbl: 'lbl-mc', text: 'MC/UC Areas' },
-                { id: 'f-pay', lbl: 'lbl-pay', text: 'Payment Status' },
-                { id: 'f-quick', lbl: 'lbl-quick', text: 'Categories' },
-                { id: 'f-drive', lbl: 'lbl-drive', text: 'Drive Sync' }
+                { id: 'f-dist', badgeId: 'badge-f-dist' },
+                { id: 'f-tehsil', badgeId: 'badge-f-tehsil' },
+                { id: 'f-mc', badgeId: 'badge-f-mc' },
+                { id: 'f-pay', badgeId: 'badge-f-pay' },
+                { id: 'f-quick', badgeId: 'badge-f-quick' },
+                { id: 'f-drive', badgeId: 'badge-f-drive' }
             ];
 
             updates.forEach(upd => {
-                const el = document.getElementById(upd.lbl);
-                if(!el) return;
-                el.innerHTML = upd.text;
+                const badge = document.getElementById(upd.badgeId);
+                if(!badge) return;
                 
                 let selected = 0;
                 let total = 0;
@@ -1485,22 +1558,42 @@
                 if (upd.id === 'f-quick') {
                     selected = Object.values(State.quickFilters).filter(v => v).length;
                     total = Object.values(State.quickFilters).length;
+                } else if (upd.id === 'f-drive') {
+                    selected = document.getElementById('f-drive-only').checked ? 1 : 0;
+                    total = 1;
                 } else {
                     selected = this.getSelected(upd.id).length;
                     total = this.getMultiSelectItems(upd.id).length;
                 }
                 
-                let badge = "";
                 if (selected > 0 && selected < total) {
-                    badge = `<span class="selection-badge">${selected}</span>`;
+                    badge.innerText = selected;
+                    badge.style.display = 'inline-flex';
+                    badge.style.background = '#eff6ff';
+                    badge.style.color = '#2563eb';
+                    badge.style.borderColor = '#dbeafe';
                 } else if (selected === total && total > 0) {
-                    badge = `<span class="selection-badge" style="background:#dcfce7; color:#16a34a; border-color:#bbf7d0;">All</span>`;
-                } else if (selected === 0) {
-                    badge = `<span class="selection-badge" style="background:#fef2f2; color:#ef4444; border-color:#fee2e2;">None</span>`;
+                    badge.innerText = 'All';
+                    badge.style.display = 'inline-flex';
+                    badge.style.background = '#edfcf2';
+                    badge.style.color = '#059669';
+                    badge.style.borderColor = '#bbf7d0';
+                } else {
+                    badge.style.display = 'none';
                 }
-                
-                if(badge) el.insertAdjacentHTML('beforeend', badge);
             });
+
+            // Update Paid History Count
+            const paidBadge = document.getElementById('badge-paid-count');
+            if(paidBadge && typeof PAID_DATA !== 'undefined') {
+                const count = Object.keys(PAID_DATA).length;
+                if(count > 0) {
+                    paidBadge.innerText = count;
+                    paidBadge.style.display = 'inline-flex';
+                } else {
+                    paidBadge.style.display = 'none';
+                }
+            }
         },
 
         init() {
@@ -1642,7 +1735,7 @@
         initMap() {
             State.map = L.map('map', { 
                 zoomControl: false,
-                preferCanvas: true 
+                preferCanvas: false // Fixes white boxes / marker fidelity
             }).setView([32.0836, 72.6711], 13);
 
             // Create a dedicated pane for KML layers to keep them below markers
@@ -1680,23 +1773,35 @@
             btn.innerText = isCollapsed ? 'keyboard_arrow_up' : 'keyboard_arrow_down';
         },
 
-        toggleFilterGroup(btn) {
-            const group = btn.closest('.filter-group');
+        toggleFilterGroup(el) {
+            const group = el.closest('.filter-group');
             const isCollapsing = !group.classList.contains('collapsed');
             
             // Accordion: Collapse all others
-            document.querySelectorAll('.filter-group').forEach(g => {
+            document.querySelectorAll('#sidebar .filter-group').forEach(g => {
+                if (g === group) return;
                 g.classList.add('collapsed');
-                const i = g.querySelector('.toggle-group-btn i');
-                if(i) i.innerText = 'expand_more';
+                g.classList.remove('active-group');
+                const i = g.querySelector('.material-icons-round:last-child, .toggle-group-btn i');
+                if(i && (i.innerText === 'expand_less' || i.innerText === 'expand_more')) {
+                    i.innerText = 'expand_more';
+                }
             });
-
+            
             if (isCollapsing) {
                 group.classList.add('collapsed');
-                btn.querySelector('i').innerText = 'expand_more';
+                group.classList.remove('active-group');
+                const i = group.querySelector('.material-icons-round:last-child, .toggle-group-btn i');
+                if(i && (i.innerText === 'expand_less' || i.innerText === 'expand_more')) {
+                    i.innerText = 'expand_more';
+                }
             } else {
                 group.classList.remove('collapsed');
-                btn.querySelector('i').innerText = 'expand_less';
+                group.classList.add('active-group');
+                const i = group.querySelector('.material-icons-round:last-child, .toggle-group-btn i');
+                if(i && (i.innerText === 'expand_less' || i.innerText === 'expand_more')) {
+                    i.innerText = 'expand_less';
+                }
             }
         },
 
@@ -1834,6 +1939,8 @@
             if(id === 'f-dist') this.onDistChange();
             else if(id === 'f-tehsil') this.onTehsilChange();
             else if(id === 'f-pay' || id === 'f-drive') this.apply();
+
+            this.updateSidebarStatus();
         },
 
         getSelected(id) {
@@ -1982,6 +2089,8 @@
 
                 return true;
             });
+
+            this.updateSidebarStatus();
 
             // 2. Extract Available Surveyors from Geo Filtered Data
             State.availableSurveyors = [...new Set(geoFiltered.map(r => r[6]))].sort();
@@ -3352,17 +3461,12 @@
                                 color = this._getFeatureColor(feature, palette);
                             }
                             return {
-                                color: color, weight: 2, opacity: 0.8, dashArray: '5, 5', 
+                                color: color, weight: 0, opacity: 0.8, dashArray: '5, 5', 
                                 fillColor: color, fillOpacity: 0.15
                             };
                         },
                         onEachFeature: (feature, layer) => {
-                             if (feature.properties && feature.properties.name) {
-                                 layer.bindTooltip(feature.properties.name, { 
-                                     permanent: false, direction: 'center', 
-                                     className: 'kml-tooltip', sticky: true 
-                                 });
-                             }
+                             // Tooltips removed as requested
                         }
                     }).addTo(State.map);
                     this.activeLayers.push(layer);
